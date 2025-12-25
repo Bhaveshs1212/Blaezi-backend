@@ -1,15 +1,20 @@
 const express = require('express');
-const app = express();
-const cors = require('cors');   
-const port = process.env.PORT || 5000;
+const cors = require('cors');
 require('dotenv').config();
+const connectDB = require('./config/db');
+const taskRoutes = require('./routes/taskRoutes');
 
-app.use(express.json());
+const app = express();
+
+// Database
+connectDB();
+
+// Middleware
 app.use(cors());
-app.get('/',(req,res)=>{
-    res.send('Blaezi backend is running');
-});
+app.use(express.json());
 
-app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
-});
+// Routes
+app.use('/api/tasks', taskRoutes);
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`🚀 Blaezi Server running on ${PORT}`));

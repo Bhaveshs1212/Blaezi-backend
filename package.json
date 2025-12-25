@@ -2,10 +2,10 @@
   "name": "blaezi-backend",
   "version": "1.0.0",
   "main": "index.js",
-"scripts": {
-  "start": "node src/index.js",
-  "dev": "nodemon src/index.js"
-},
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Bhaveshs1212/Blaezi-backend.git"
@@ -22,6 +22,7 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
+    "mongodb": "^7.0.0",
     "mongoose": "^9.0.2"
   },
   "devDependencies": {
