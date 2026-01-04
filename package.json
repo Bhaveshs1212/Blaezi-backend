@@ -4,7 +4,12 @@
   "main": "index.js",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "nodemon src/index.js"
+    "dev": "nodemon src/index.js",
+    "test:models": "node src/test/testModels.js",
+    "test:auth": "node src/test/testAuth.js",
+    "test:security": "node src/test/testSecurity.js",
+    "seed:dsa": "node src/seed/seedDSA.js",
+    "seed:dsa:clear": "node src/seed/seedDSA.js --clear"
   },
   "repository": {
     "type": "git",
@@ -19,9 +24,14 @@
   "homepage": "https://github.com/Bhaveshs1212/Blaezi-backend#readme",
   "description": "",
   "dependencies": {
+    "@octokit/rest": "^22.0.1",
+    "axios": "^1.13.2",
+    "bcryptjs": "^3.0.3",
+    "cheerio": "^1.1.2",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
     "mongodb": "^7.0.0",
     "mongoose": "^9.0.2"
   },
