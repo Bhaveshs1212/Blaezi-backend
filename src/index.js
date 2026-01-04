@@ -1,20 +1,35 @@
+console.log("🔥 THIS IS THE ACTIVE INDEX.JS");
+
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
-require('dotenv').config();
 const connectDB = require('./config/db');
-const taskRoutes = require('./routes/taskRoutes');
+
+const authRoutes = require('./routes/authRoutes');
+const dsaRoutes = require('./routes/dsaRoutes');
+const projectRoutes = require('./routes/projectRoutes');
 
 const app = express();
 
-// Database
+// 🔴 THESE TWO MUST COME BEFORE ROUTES
+app.use(cors());
+app.use(express.json());   // 👈 THIS WAS THE SILENT KILLER
+
+// Connect DB
 connectDB();
 
-// Middleware
-app.use(cors());
-app.use(express.json());
-
 // Routes
-app.use('/api/tasks', taskRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/dsa', dsaRoutes);
+app.use('/api/projects', projectRoutes);
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Blaezi Server running on ${PORT}`));
+// Health check (IMPORTANT)
+app.get('/ping', (req, res) => {
+  res.send('SERVER ALIVE');
+});
+
+const PORT = process.env.PORT || 4000;
+app.listen(PORT, () => {
+  console.log(`Blaezi Server running on ${PORT}`);
+});
