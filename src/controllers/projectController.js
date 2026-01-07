@@ -157,19 +157,34 @@ exports.syncFromGitHub = async (req, res) => {
     
     const { githubUsername, filters } = req.body;
     
-    if (!githubUsername) {
+    // Validate GitHub username
+    if (!githubUsername || githubUsername.trim() === '') {
       return res.status(400).json({
         success: false,
-        message: 'GitHub username is required'
+        message: 'GitHub username is required. Please provide your GitHub username in the request body.'
       });
     }
     
-    console.log('Syncing GitHub repos for user:', githubUsername);
+    // Trim and validate username format
+    const cleanUsername = githubUsername.trim();
+    
+    // Basic validation: GitHub usernames can only contain alphanumeric chars and hyphens
+    if (!/^[a-zA-Z0-9-]+$/.test(cleanUsername)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid GitHub username format. Usernames can only contain letters, numbers, and hyphens.'
+      });
+    }
+    
+    console.log('===== GitHub Sync Request =====');
+    console.log('User ID:', userId);
+    console.log('GitHub Username:', cleanUsername);
     console.log('Filters:', filters);
+    console.log('===============================');
     
     // Fetch repositories from GitHub
     const result = await githubService.searchUserRepositories(
-      githubUsername, 
+      cleanUsername, 
       filters || {}
     );
     
@@ -233,7 +248,7 @@ exports.syncFromGitHub = async (req, res) => {
     }
     
     // Update user's GitHub username if not already set
-    await User.findByIdAndUpdate(userId, { githubUsername }, { new: true });
+    await User.findByIdAndUpdate(userId, { githubUsername: cleanUsername }, { new: true });
     
     console.log('Successfully synced', syncedProjects.length, 'projects');
     
@@ -244,7 +259,7 @@ exports.syncFromGitHub = async (req, res) => {
         count: 0,
         data: [],
         errors: errors,
-        username: githubUsername
+        username: cleanUsername
       });
     }
     
@@ -254,7 +269,7 @@ exports.syncFromGitHub = async (req, res) => {
       count: syncedProjects.length,
       data: syncedProjects,
       errors: errors.length > 0 ? errors : undefined,
-      username: githubUsername
+      username: cleanUsername
     });
     
   } catch (error) {

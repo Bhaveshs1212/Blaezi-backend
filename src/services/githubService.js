@@ -34,6 +34,8 @@ const fetchUserRepositories = async (username, token = null) => {
   try {
     const octokit = createGitHubClient(token);
     
+    console.log('🔍 Fetching repos from GitHub for user:', username);
+    
     // Fetch all repos for the user
     const { data: repos } = await octokit.repos.listForUser({
       username,
@@ -41,6 +43,14 @@ const fetchUserRepositories = async (username, token = null) => {
       sort: 'updated',
       direction: 'desc'
     });
+
+    console.log(`✓ GitHub API returned ${repos.length} repositories`);
+    console.log('First 3 repos:', repos.slice(0, 3).map(r => ({
+      name: r.name,
+      owner: r.owner.login,
+      fullName: r.full_name,
+      url: r.html_url
+    })));
 
     // Transform to our format
     const transformedRepos = repos.map(repo => ({
