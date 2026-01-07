@@ -157,4 +157,12 @@ router.post('/:id/steps', auth, careerController.addPreparationStep);
  */
 router.patch('/:id/steps/:stepId', auth, careerController.toggleStepCompletion);
 
+/**
+ * DELETE /api/career/:id/steps/:stepId
+ * 
+ * Delete preparation step from event
+ * 🔒 PROTECTED - Requires authentication
+ */
+router.delete('/:id/steps/:stepId', auth, careerController.deletePreparationStep);
+
 module.exports = router;

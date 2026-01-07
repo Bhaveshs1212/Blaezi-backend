@@ -177,11 +177,13 @@ exports.createEvent = async (req, res) => {
       type,
       date,
       status,
+      completed,  // Frontend might send boolean 'completed'
       priority,
       company,
       location,
       url,
       preparationSteps,
+      preparation,  // Frontend might send 'preparation' instead of 'preparationSteps'
       notes,
       starred
     } = req.body;
@@ -193,18 +195,39 @@ exports.createEvent = async (req, res) => {
       });
     }
     
+    // Handle completed boolean -> status conversion
+    let eventStatus = status;
+    if (completed !== undefined && !status) {
+      eventStatus = completed ? 'completed' : 'upcoming';
+    }
+    
+    // Handle preparation vs preparationSteps
+    const steps = preparationSteps || preparation || [];
+    
+    // Validate and normalize event type
+    const validTypes = ['interview', 'deadline', 'goal', 'milestone', 'networking', 'other'];
+    let eventType = type ? type.toLowerCase() : 'other';
+    if (!validTypes.includes(eventType)) {
+      // Map common variations
+      if (['exam', 'test', 'assessment'].includes(eventType)) {
+        eventType = 'milestone';
+      } else {
+        eventType = 'other';
+      }
+    }
+    
     const event = await CareerEvent.create({
       userId,
       title,
       description,
-      type: type || 'other',
+      type: eventType,
       date,
-      status,
+      status: eventStatus,
       priority,
       company,
       location,
       url,
-      preparationSteps: preparationSteps || [],
+      preparationSteps: steps,
       notes,
       starred
     });
@@ -325,7 +348,7 @@ exports.updateEvent = async (req, res) => {
  */
 exports.deleteEvent = async (req, res) => {
   try {
-    const event = await CareerEvent.findByIdAndDelete(req.params.id);
+    const event = await CareerEvent.findById(req.params.id);
     
     if (!event) {
       return res.status(404).json({
@@ -333,6 +356,16 @@ exports.deleteEvent = async (req, res) => {
         message: 'Event not found'
       });
     }
+    
+    // Check if user owns this event
+    if (event.userId.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to delete this event'
+      });
+    }
+    
+    await CareerEvent.findByIdAndDelete(req.params.id);
     
     res.json({
       success: true,
@@ -439,6 +472,61 @@ exports.toggleStepCompletion = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to toggle step',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * DELETE /api/career/:id/steps/:stepId
+ * 
+ * Delete a preparation step from an event
+ */
+exports.deletePreparationStep = async (req, res) => {
+  try {
+    const event = await CareerEvent.findById(req.params.id);
+    
+    if (!event) {
+      return res.status(404).json({
+        success: false,
+        message: 'Event not found'
+      });
+    }
+    
+    // Check if user owns this event
+    if (event.userId.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to modify this event'
+      });
+    }
+    
+    // Find and remove the step
+    const stepIndex = event.preparationSteps.findIndex(
+      step => step._id.toString() === req.params.stepId
+    );
+    
+    if (stepIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: 'Preparation step not found'
+      });
+    }
+    
+    event.preparationSteps.splice(stepIndex, 1);
+    await event.save();
+    
+    res.json({
+      success: true,
+      message: 'Preparation step deleted successfully',
+      data: event
+    });
+    
+  } catch (error) {
+    console.error('Error deleting preparation step:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete preparation step',
       error: error.message
     });
   }
