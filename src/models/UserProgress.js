@@ -50,16 +50,18 @@ const UserProgressSchema = new mongoose.Schema({
   /**
    * problemId - Which problem is this progress for?
    * 
-   * CRITICAL: This links to MasterProblem collection
+   * CHANGED: Now accepts both MongoDB ObjectIds AND custom string IDs
+   * This allows support for external problem IDs like "striver-1", "leetcode-123"
    * 
    * Example:
-   * MasterProblem: { _id: "abc123", title: "Two Sum", difficulty: "Easy" }
-   * UserProgress:  { userId: "user1", problemId: "abc123", status: "solved" }
-   *                                              ↑ Links to MasterProblem._id
+   * MasterProblem: { _id: "695952ae8eabe01017afe120", title: "Two Sum" }
+   * UserProgress:  { userId: "user1", problemId: "695952ae8eabe01017afe120", status: "solved" }
+   * 
+   * OR custom IDs:
+   * UserProgress:  { userId: "user1", problemId: "striver-1", status: "solved" }
    */
   problemId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'MasterProblem',  // References MasterProblem collection
+    type: mongoose.Schema.Types.Mixed,  // Changed from ObjectId to Mixed to support strings
     required: [true, 'Problem ID is required'],
     index: true   // Index for fast lookups
   },

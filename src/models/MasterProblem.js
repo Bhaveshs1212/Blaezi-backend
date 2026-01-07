@@ -363,7 +363,8 @@ MasterProblemSchema.methods.getDifficultyColor = function() {
 MasterProblemSchema.statics.getBySheet = function(sheetName) {
   return this.find({ sheet: sheetName, isActive: true })
     .sort({ problemNumber: 1 })  // Sort by problem number (1, 2, 3...)
-    .select('-__v');  // Exclude version key from results
+    .select('-__v')  // Exclude version key from results
+    .lean();  // Return plain JS objects with _id included
 };
 
 /**
@@ -376,7 +377,9 @@ MasterProblemSchema.statics.getByDifficultyAndTopic = function(difficulty, topic
     difficulty, 
     topic, 
     isActive: true 
-  }).sort({ title: 1 });
+  })
+  .sort({ title: 1 })
+  .lean();  // Return plain JS objects with _id included
 };
 
 /**
@@ -389,7 +392,9 @@ MasterProblemSchema.statics.searchProblems = function(searchTerm) {
   return this.find(
     { $text: { $search: searchTerm } },
     { score: { $meta: 'textScore' } }  // Include relevance score
-  ).sort({ score: { $meta: 'textScore' } });  // Sort by relevance
+  )
+  .sort({ score: { $meta: 'textScore' } })  // Sort by relevance
+  .lean();  // Return plain JS objects with _id included
 };
 
 // ═══════════════════════════════════════════════════════════

@@ -13,6 +13,7 @@
  * - Format responses
  */
 
+const mongoose = require('mongoose');
 const MasterProblem = require('../models/MasterProblem');
 const UserProgress = require('../models/UserProgress');
 const striverSheetService = require('../services/striverSheetService');
@@ -69,15 +70,24 @@ exports.getAllProblems = async (req, res) => {
     
     // Text search if provided
     if (search) {
-      problems = await MasterProblem.searchProblems(search);
+      problems = await MasterProblem.searchProblems(search).lean();
     } else {
-      problems = await MasterProblem.find(filter).sort({ problemNumber: 1 });
+      problems = await MasterProblem.find(filter)
+        .select('+_id')  // Explicitly include _id
+        .sort({ problemNumber: 1 })
+        .lean();  // Convert to plain JS objects for proper JSON serialization
     }
+    
+    // Add 'id' alias for frontend compatibility (some frameworks expect 'id' instead of '_id')
+    const problemsWithId = problems.map(problem => ({
+      ...problem,
+      id: problem._id.toString()  // Add 'id' field as string version of _id
+    }));
     
     res.json({
       success: true,
-      count: problems.length,
-      data: problems,
+      count: problemsWithId.length,
+      data: problemsWithId,
       source: 'Database'
     });
     
@@ -99,7 +109,9 @@ exports.getAllProblems = async (req, res) => {
 exports.getProblemById = async (req, res) => {
   try {
     const problem = await MasterProblem.findById(req.params.id)
-      .populate('similarProblems');
+      .select('+_id')  // Explicitly include _id
+      .populate('similarProblems')
+      .lean();  // Convert to plain JS object for proper JSON serialization
     
     if (!problem) {
       return res.status(404).json({
@@ -108,9 +120,15 @@ exports.getProblemById = async (req, res) => {
       });
     }
     
+    // Add 'id' alias for frontend compatibility
+    const problemWithId = {
+      ...problem,
+      id: problem._id.toString()
+    };
+    
     res.json({
       success: true,
-      data: problem
+      data: problemWithId
     });
     
   } catch (error) {
@@ -189,14 +207,18 @@ exports.createOrUpdateProgress = async (req, res) => {
       });
     }
     
-    // Verify problem exists
-    const problem = await MasterProblem.findById(problemId);
-    if (!problem) {
-      return res.status(404).json({
-        success: false,
-        message: 'Problem not found'
-      });
+    // Verify problem exists (only for MongoDB ObjectIds)
+    // For custom string IDs, we skip this check and let UserProgress creation handle it
+    if (mongoose.Types.ObjectId.isValid(problemId)) {
+      const problem = await MasterProblem.findById(problemId);
+      if (!problem) {
+        return res.status(404).json({
+          success: false,
+          message: 'Problem not found'
+        });
+      }
     }
+    // For custom string IDs (like "striver-1"), we allow progress without verification
     
     // Create or update progress
     const updates = {};
@@ -207,8 +229,15 @@ exports.createOrUpdateProgress = async (req, res) => {
     
     const progress = await UserProgress.createOrUpdate(userId, problemId, updates);
     
-    // Populate problem details for response
-    await progress.populate('problemId');
+    // Populate problem details for response (only works for ObjectIds)
+    if (mongoose.Types.ObjectId.isValid(problemId)) {
+      try {
+        await progress.populate('problemId');
+      } catch (err) {
+        // If populate fails, continue without it
+        console.log('Could not populate problemId:', err.message);
+      }
+    }
     
     res.json({
       success: true,
