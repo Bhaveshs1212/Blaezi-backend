@@ -15,5 +15,6 @@ router.post('/login', authController.login);
 // Protected routes
 router.get('/me', auth, authController.getMe);
 router.patch('/profile', auth, authController.updateProfile);
+router.put('/profile', auth, authController.updateProfile); // Also support PUT for frontend compatibility
 
 module.exports = router;
